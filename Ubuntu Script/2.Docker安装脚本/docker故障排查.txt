@@ -1,0 +1,67 @@
+第一步：安装 JSON 验证工具
+# 安装 JSON 验证工具 (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y jq python3-pip
+
+# 安装 jsonlint
+sudo pip3 install demjson3
+
+# 验证安装
+which jsonlint && echo "✅ jsonlint 已安装" || echo "🔄 将使用 jq 验证"
+
+
+第二步：验证并修复 JSON 配置
+# 1. 备份当前配置
+sudo mkdir -p /etc/docker
+sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup 2>/dev/null || true
+
+# 2. 创建优化的配置文件 (兼容 Ubuntu 24.04)
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "insecure-registries": [
+    "192.168.40.249:8929",
+    "192.168.40.249"
+  ],
+  "features": {
+    "buildkit": false
+  },
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  }
+}
+EOF
+
+# 3. 验证 JSON 语法 (使用 jq)
+if command -v jq &> /dev/null; then
+  sudo jq empty /etc/docker/daemon.json && echo "✅ JSON 语法正确 (jq 验证)" || echo "❌ JSON 语法错误"
+else
+  echo "ℹ️ jq 未安装，跳过 JSON 语法验证"
+fi
+
+ 
+
+ 第三步：应用修复并重启服务
+# 1. 重新加载 systemd 配置
+sudo systemctl daemon-reload
+
+# 2. 停止 Docker 服务
+sudo systemctl stop docker docker.socket containerd 2>/dev/null || true
+
+# 3. 清理临时文件
+sudo rm -rf /var/run/docker* /var/run/containerd*
+
+# 4. 启动服务
+sudo systemctl start containerd
+sudo systemctl start docker
+
+# 5. 验证状态
+if sudo systemctl is-active --quiet docker; then
+  echo "✅ Docker 服务启动成功！"
+  echo "当前配置验证:"
+  sudo docker info | grep -E "(Server Version|Cgroup Driver|Storage Driver|Insecure Registries)"
+else
+  echo "❌ Docker 服务启动失败，查看详细日志:"
+  sudo journalctl -u docker.service -n 50 --no-pager
+fi
