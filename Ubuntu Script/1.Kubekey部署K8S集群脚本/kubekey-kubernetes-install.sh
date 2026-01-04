@@ -34,7 +34,7 @@ sudo sysctl --system
 # 更新系统并安装基础依赖
 echo "更新系统并安装基础依赖..."
 sudo apt update
-sudo apt install -y curl wget socat conntrack ebtables ipset apt-transport-https ca-certificates gnupg lsb-release ipvsadm
+sudo apt install -y curl wget socat conntrack ebtables ipset apt-transport-https ca-certificates gnupg lsb-release ipvsadm net-tools
 
 # 设置时区为上海
 echo "设置时区为上海..."
