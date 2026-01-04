@@ -60,16 +60,31 @@ echo "===== 2. 生成SSL证书 ====="
 echo "创建证书目录: $CERT_DIR"
 sudo mkdir -p $CERT_DIR
 
-# 生成私钥
-echo "生成私钥..."
-sudo openssl genrsa -out $CERT_DIR/server.key 2048
+# 生成CA私钥
+echo "生成CA私钥..."
+sudo openssl genrsa -out $CERT_DIR/ca.key 4096
 if [ $? -ne 0 ]; then
-    echo "错误：生成私钥失败"
+    echo "错误：生成CA私钥失败"
     exit 1
 fi
 
-# 生成证书请求和自签名证书
-echo "生成SSL证书..."
+# 生成CA证书 (10年有效期)
+echo "生成CA证书 (有效期10年)..."
+sudo openssl req -new -x509 -days 3650 -key $CERT_DIR/ca.key \
+    -out $CERT_DIR/ca.crt -sha256 \
+    -subj "/C=CN/ST=Beijing/L=Beijing/O=Harbor CA/OU=IT/CN=Harbor Root CA"
+if [ $? -ne 0 ]; then
+    echo "错误：生成CA证书失败"
+    exit 1
+fi
+
+# 生成服务器私钥
+echo "生成服务器私钥..."
+sudo openssl genrsa -out $CERT_DIR/server.key 2048
+if [ $? -ne 0 ]; then
+    echo "错误：生成服务器私钥失败"
+    exit 1
+fi
 
 # 创建临时OpenSSL配置文件
 cat > /tmp/openssl.cnf << EOF
@@ -77,7 +92,6 @@ cat > /tmp/openssl.cnf << EOF
 default_bits = 2048
 distinguished_name = req_distinguished_name
 req_extensions = req_ext
-x509_extensions = v3_req
 prompt = no
 
 [ req_distinguished_name ]
@@ -91,6 +105,23 @@ CN = $HARBOR_IP
 [ req_ext ]
 subjectAltName = @alt_names
 
+[ alt_names ]
+IP.1 = $HARBOR_IP
+DNS.1 = harbor.local
+DNS.2 = myharbor.com
+EOF
+
+# 生成服务器证书签名请求(CSR)
+echo "生成服务器证书签名请求..."
+sudo openssl req -new -key $CERT_DIR/server.key -out $CERT_DIR/server.csr \
+    -config /tmp/openssl.cnf
+if [ $? -ne 0 ]; then
+    echo "错误：生成CSR失败"
+    exit 1
+fi
+
+# 创建CA签名配置文件
+cat > /tmp/openssl-ca.cnf << EOF
 [ v3_req ]
 subjectAltName = @alt_names
 
@@ -100,24 +131,38 @@ DNS.1 = harbor.local
 DNS.2 = myharbor.com
 EOF
 
-sudo openssl req -x509 -new -nodes -key $CERT_DIR/server.key -sha256 -days 3650 \
-    -out $CERT_DIR/server.crt -config /tmp/openssl.cnf
+# 使用CA证书签名服务器证书 (10年有效期)
+echo "使用CA签名服务器证书 (有效期10年)..."
+sudo openssl x509 -req -in $CERT_DIR/server.csr -CA $CERT_DIR/ca.crt \
+    -CAkey $CERT_DIR/ca.key -CAcreateserial -out $CERT_DIR/server.crt \
+    -days 3650 -sha256 -extfile /tmp/openssl-ca.cnf -extensions v3_req
 if [ $? -ne 0 ]; then
-    echo "错误：生成证书失败"
+    echo "错误：签名服务器证书失败"
     exit 1
 fi
 
-# 清理临时配置文件
-rm -f /tmp/openssl.cnf
+# 清理临时配置文件和CSR
+rm -f /tmp/openssl.cnf /tmp/openssl-ca.cnf $CERT_DIR/server.csr $CERT_DIR/ca.srl
 
 # 设置证书权限
+sudo chmod 644 $CERT_DIR/ca.crt
 sudo chmod 644 $CERT_DIR/server.crt
 sudo chmod 600 $CERT_DIR/server.key
+sudo chmod 600 $CERT_DIR/ca.key
 
-# 验证证书是否包含SAN
+# 验证证书
 echo "验证证书..."
+echo "CA证书信息:"
+sudo openssl x509 -in $CERT_DIR/ca.crt -text -noout | grep -E "Subject:|Not After|Issuer:"
+echo ""
+echo "服务器证书信息:"
+sudo openssl x509 -in $CERT_DIR/server.crt -text -noout | grep -E "Subject:|Not After:|Issuer:"
+echo ""
+echo "验证服务器证书SAN扩展:"
 sudo openssl x509 -in $CERT_DIR/server.crt -text -noout | grep -A1 "Subject Alternative Name"
 echo ""
+echo "验证证书链:"
+sudo openssl verify -CAfile $CERT_DIR/ca.crt $CERT_DIR/server.crt
 
 ######################### 3.编辑配置文件 ###########################
 echo "===== 3. 配置Harbor ====="

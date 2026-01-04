@@ -1,0 +1,42 @@
+在Docker客户端创建证书目录：
+sudo mkdir -p /etc/docker/certs.d/192.168.40.248
+
+将私有仓库的CA证书复制到该目录（需要从仓库管理员处获取）：
+sudo cp ca.crt /etc/docker/certs.d/192.168.40.248/ca.crt
+
+
+证书格式
+内容格式：Docker支持PEM编码的证书内容，所以ca.pem文件的内容可以直接使用
+文件命名：Docker守护进程特别要求CA证书文件必须使用.crt扩展名，这是硬性规定
+验证证书内容：如果您不确定证书格式，openssl x509 -in ca.pem -text -noout 命令检查
+
+
+#也可以用Openssl来传输证书
+
+
+重启Docker服务
+sudo systemctl restart docker
+
+
+
+
+#5.临时办法
+# 1. 创建或编辑daemon.json
+sudo nano /etc/docker/daemon.json
+
+# 2. 添加以下内容
+{
+  "insecure-registries": ["192.168.40.248"]
+}
+
+# 保存后重启Docker
+sudo systemctl restart docker
+
+# 3. 测试登录
+docker login 192.168.40.248 -u user 
+
+
+
+
+
+
