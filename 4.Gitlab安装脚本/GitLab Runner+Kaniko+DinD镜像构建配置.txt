@@ -1,0 +1,37 @@
+需要在GitLab Runner中配置Docker镜像构建的DinD服务，并配置Kaniko来打包镜像配置如下：
+
+#镜像文件准备，尽量使用国内镜像或使用私有Harobor镜像仓库
+ 192.168.40.248/library/docker:20.10.16-dind
+ 192.168.40.248/library/kaniko-project/executor:v1.9.1 
+ 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+
+#配置GitLab Runner的config.toml文件
+[runners.docker]
+  tls_verify = false
+  image = "192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1"
+  dind = ["192.168.40.248/library/docker:20.10.16-dind"]
+  volumes = ["/certs/client", "/cache"]
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
