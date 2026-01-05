@@ -1,9 +1,12 @@
 需要在GitLab Runner中配置Docker镜像构建的DinD服务，并配置Kaniko来打包镜像配置如下：
 
 #镜像文件准备，尽量使用国内镜像或使用私有Harobor镜像仓库
- 192.168.40.248/library/docker:20.10.16-dind
- 192.168.40.248/library/kaniko-project/executor:v1.9.1 
- 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+192.168.40.248/library/docker:20.10.16-dind
+192.168.40.248/library/kaniko-project/executor:v1.9.1 
+192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+192.168.40.248/library/kaniko-project/executor:v1.9.1-debug
+192.168.40.248/library/ubuntu:24.04
+
 
 #配置GitLab Runner的config.toml文件
 [[runners]]
@@ -22,22 +25,21 @@
   [runners.docker]
     tls_verify = false
     image = "alpine:latest"   #设置此基础镜像
-    helper_image = "192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1" #1.增加此配置
-    privileged = false
+    helper_image = "192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1" #1.增加此配置=重要
+    privileged = false   #Kaniko不需要root权限，DinD模式则需要
     disable_entrypoint_overwrite = false
     oom_kill_disable = false
     disable_cache = false
     volumes = ["/cache"]
     shm_size = 0
     network_mtu = 0
-    insecure-registry = ["http://192.168.40.248"] #2.增加此配置
+    insecure-registry = ["http://192.168.40.248"] #2.增加此配置=重要
+
+# 最好使用 systemctl
+sudo systemctl restart gitlab-runner
 
 # 如果使用系统服务
 sudo gitlab-runner restart
-
-# 或者如果使用 systemctl
-sudo systemctl restart gitlab-runner
-
 
 
 
