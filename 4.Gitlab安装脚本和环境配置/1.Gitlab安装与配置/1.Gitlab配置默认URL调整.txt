@@ -1,0 +1,50 @@
+#1.Gitlab默认域名 gitlab.example.com 时 将 external_url 修改为 http://192.168.40.249
+1.如果您使用的是 Omnibus GitLab，需要修改 /etc/gitlab/gitlab.rb 文件中的 external_url 设置
+2.如果您使用的是源码安装的 GitLab，需要修改 config/gitlab.yml 文件
+
+
+#2.重要####保存更改后，运行 sudo gitlab-ctl reconfigure 命令来应用配置。
+- update content in file /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf from 68926e to 0697f1
+      --- /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf     2026-01-04 16:43:19.915622350 +0800
+      +++ /var/opt/gitlab/nginx/conf/service_conf/.chef-gitlab-rails20260105-35853-2ovin8.conf  2026-01-05 09:48:42.111027177 +0800
+      @@ -35,7 +35,7 @@
+         listen *:80 default_server;
+       
+       
+      -  server_name gitlab.example.com;
+      +  server_name 192.168.40.249;
+         server_tokens off; ## Don't show the nginx version number, a security best practice
+       
+         ## Increase this if you want to upload large attachments
+      @@ -60,7 +60,7 @@
+         error_log   /var/log/gitlab/nginx/gitlab_error.log error;
+       
+         if ($http_host = "") {
+      -    set $http_host_with_default "gitlab.example.com";
+      +    set $http_host_with_default "192.168.40.249";
+         }
+       
+         if ($http_host != "") {
+
+Infra Phase complete, 0/890 resources updated in 21 seconds
+gitlab Reconfigured!
+
+ 
+
+
+#3.sudo gitlab-ctl restart重启进程内容如下
+ok: run: alertmanager: (pid 33238) 0s
+ok: run: gitaly: (pid 33255) 0s
+ok: run: gitlab-exporter: (pid 33285) 0s
+ok: run: gitlab-kas: (pid 33303) 1s
+ok: run: gitlab-workhorse: (pid 33323) 0s
+ok: run: logrotate: (pid 33343) 0s
+ok: run: nginx: (pid 33349) 0s
+ok: run: node-exporter: (pid 33369) 0s
+ok: run: postgres-exporter: (pid 33377) 0s
+ok: run: postgresql: (pid 33386) 0s
+ok: run: prometheus: (pid 33388) 1s
+ok: run: puma: (pid 33434) 0s
+ok: run: redis: (pid 33439) 0s
+ok: run: redis-exporter: (pid 33447) 0s
+ok: run: sidekiq: (pid 33458) 1s
