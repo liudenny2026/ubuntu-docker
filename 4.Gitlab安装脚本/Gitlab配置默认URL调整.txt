@@ -1,13 +1,13 @@
-#Gitlab默认域名 gitlab.example.com 时 将 external_url 修改为 http://192.168.40.249
+#1.Gitlab默认域名 gitlab.example.com 时 将 external_url 修改为 http://192.168.40.249
 1.如果您使用的是 Omnibus GitLab，需要修改 /etc/gitlab/gitlab.rb 文件中的 external_url 设置
 2.如果您使用的是源码安装的 GitLab，需要修改 config/gitlab.yml 文件
 
-#重启Gitlab服务进程
+#2.重启Gitlab服务进程
 sudo gitlab-ctl restart
 或者sudo gitlab-ctl reconfigure
 
 
-root@ubuntuserver:/etc/gitlab# gitlab-ctl restart #重启进程内容如下
+#3.重启进程内容如下
 ok: run: alertmanager: (pid 33238) 0s
 ok: run: gitaly: (pid 33255) 0s
 ok: run: gitlab-exporter: (pid 33285) 0s
