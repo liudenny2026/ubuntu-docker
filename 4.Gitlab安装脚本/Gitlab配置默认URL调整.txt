@@ -2,12 +2,37 @@
 1.如果您使用的是 Omnibus GitLab，需要修改 /etc/gitlab/gitlab.rb 文件中的 external_url 设置
 2.如果您使用的是源码安装的 GitLab，需要修改 config/gitlab.yml 文件
 
-#2.重启Gitlab服务进程
-sudo gitlab-ctl restart
-或者sudo gitlab-ctl reconfigure
+
+#2.保存更改后，运行 sudo gitlab-ctl reconfigure 命令来应用配置。
+- update content in file /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf from 68926e to 0697f1
+      --- /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf     2026-01-04 16:43:19.915622350 +0800
+      +++ /var/opt/gitlab/nginx/conf/service_conf/.chef-gitlab-rails20260105-35853-2ovin8.conf  2026-01-05 09:48:42.111027177 +0800
+      @@ -35,7 +35,7 @@
+         listen *:80 default_server;
+       
+       
+      -  server_name gitlab.example.com;
+      +  server_name 192.168.40.249;
+         server_tokens off; ## Don't show the nginx version number, a security best practice
+       
+         ## Increase this if you want to upload large attachments
+      @@ -60,7 +60,7 @@
+         error_log   /var/log/gitlab/nginx/gitlab_error.log error;
+       
+         if ($http_host = "") {
+      -    set $http_host_with_default "gitlab.example.com";
+      +    set $http_host_with_default "192.168.40.249";
+         }
+       
+         if ($http_host != "") {
+
+Infra Phase complete, 0/890 resources updated in 21 seconds
+gitlab Reconfigured!
+
+ 
 
 
-#3.重启进程内容如下
+#3.sudo gitlab-ctl restart重启进程内容如下
 ok: run: alertmanager: (pid 33238) 0s
 ok: run: gitaly: (pid 33255) 0s
 ok: run: gitlab-exporter: (pid 33285) 0s
