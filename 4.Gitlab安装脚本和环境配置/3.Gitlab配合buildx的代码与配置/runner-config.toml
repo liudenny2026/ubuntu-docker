@@ -1,0 +1,33 @@
+[[runners]]
+  name = "buildx"
+  url = "http://192.168.40.249"
+  id = 8
+  token = "glrt-DC056Koy905k67St5SA1kW86MQpwOjMKdDozCnU6MQ8.01.171ffcxqz"
+  token_obtained_at = 2026-01-05T04:46:15Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker" # 使用docker执行器
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+    [runners.cache.s3]
+    [runners.cache.gcs]
+    [runners.cache.azure]
+  [runners.docker]
+    tls_verify = false  # 禁用TLS验证
+    image = "docker:24.0.7-cli"   # 主执行容器镜像
+    privileged = false  # 非特权模式（更安全）
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/cache", "/var/run/docker.sock:/var/run/docker.sock"] # 挂载docker.sock以与DinD通信
+    shm_size = 0
+    network_mtu = 0
+    insecure-registry = ["http://192.168.40.248"] # 配置私有HTTP镜像仓库
+    # 配置额外主机映射以解决网络问题
+    extra_hosts = ["host.docker.internal:host-gateway"]
+
+# 工作流程说明：
+# 1. 主容器使用 docker:24.0.7-cli 镜像，这是一个轻量级的 Docker 客户端环境
+# 2. 服务容器使用 docker:24.0.7-dind 镜像，运行完整的 Docker 守护进程
+# 3. 主容器通过挂载的 /var/run/docker.sock 与 DinD 服务容器通信
+# 4. DinD 服务容器使用 BuildKit 进行镜像构建
+# 5. 最终，DinD 服务容器会使用宿主机的资源（CPU、内存、存储等）来执行构建任务

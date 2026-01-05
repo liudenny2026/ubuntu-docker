@@ -1,0 +1,35 @@
+stages:
+  - build
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+before_script:
+    - echo "Docker client setup"
+
+build:
+  stage: build
+  image: docker:24.0.7-cli
+  tags:
+    - buildx
+  services:
+    - name: docker:24.0.7-dind
+      alias: docker
+      command: ["--insecure-registry", "192.168.40.248", "--registry-mirror", "https://docker.mirrors.ustc.edu.cn", "--registry-mirror", "https://docker.1ms.run"]
+  script:
+    # 等待 Docker 服务启动
+    - |
+      echo "Waiting for Docker daemon to start..."
+      timeout 120 sh -c 'until docker info; do sleep 2; done' || exit 1
+    # 登录私有仓库
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD 192.168.40.248 || true
+    # 验证 git 是否可用
+    - git --version || echo "Git not available in build context"
+    # 构建镜像
+    - docker build -t 192.168.40.248/library/myapp:$CI_COMMIT_SHA .
+    # 推送镜像
+    - docker push 192.168.40.248/library/myapp:$CI_COMMIT_SHA
+    # 验证镜像
+    - docker images 192.168.40.248/library/myapp:$CI_COMMIT_SHA
+  after_script:
+    - docker logout 192.168.40.248 || true

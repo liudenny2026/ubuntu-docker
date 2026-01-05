@@ -1,0 +1,51 @@
+# GitLab Runner 配置文件
+# 用于 Kaniko 构建环境和私有仓库访问配置
+
+# 镜像文件准备，尽量使用国内镜像或使用私有 Harbor 镜像仓库
+# 以下为可能用到的镜像列表：
+# 192.168.40.248/library/docker:20.10.16-dind
+# 192.168.40.248/library/kaniko-project/executor:v1.9.1
+# 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+# 192.168.40.248/library/kaniko-project/executor:v1.9.1-debug
+# 192.168.40.248/library/ubuntu:24.04
+
+# 重要配置说明：
+# 1. 正确配置应该使用 insecure-registry 参数来配置对不安全仓库的访问
+# 2. 错误配置示例：[runners.docker] 部分不应包含 dind 参数
+# 3. 当 GitLab Runner 已在 config.toml 中配置了 insecure-registry 时，
+#    使用 kaniko 构建镜像无需在 .job_template 中声明 dind 服务，
+#    kaniko 可直接通信私有仓库，避免不必要的镜像拉取和资源开销
+
+concurrent = 1
+check_interval = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "kaniko"
+  url = "http://192.168.40.249"
+  id = 6
+  token = "glrt-LR3BsCw3iw0hMxZk9H5V_W86MQpwOjIKdDozCnU6MQ8.01.170h0qt6g"
+  token_obtained_at = 2026-01-04T12:58:00Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  # 缓存配置
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+    [runners.cache.s3]
+    [runners.cache.gcs]
+    [runners.cache.azure]
+  # Docker 执行器配置
+  [runners.docker]
+    tls_verify = false
+    image = "alpine:latest"   # 1.基础镜像
+    helper_image = "192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1"  # 2.GitLabRunner Helper镜像
+    privileged = false  # 3.Kaniko 不需要特权模式
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/cache"]
+    shm_size = 0
+    network_mtu = 0
+    insecure-registry = ["http://192.168.40.248"]  # 4.配置不安全私有仓库，允许访问 HTTP 私有仓库

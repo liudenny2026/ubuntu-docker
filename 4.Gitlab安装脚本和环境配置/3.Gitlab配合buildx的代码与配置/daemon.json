@@ -1,0 +1,9 @@
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://docker.1ms.run"
+  ],
+  "insecure-registries": [
+    "192.168.40.248"
+  ]
+}

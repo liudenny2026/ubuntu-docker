@@ -1,0 +1,6 @@
+# 敏感文件
+.env
+.gitlab-ci.local.yml
+*.key
+*.pem
+secrets/

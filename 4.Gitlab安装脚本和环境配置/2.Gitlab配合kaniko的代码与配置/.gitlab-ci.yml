@@ -1,0 +1,35 @@
+# GitLab CI/CD 配置文件
+# 用于 Kaniko 构建 Docker 镜像并推送到私有仓库
+
+stages:
+  - build
+
+variables:
+  # 镜像名称配置
+  IMAGE_NAME: 192.168.40.248/library/kaniko-demo
+  # 镜像标签配置
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  # Harbor 凭证（必须在 GitLab CI/CD Variables 中设置）
+  # HARBOR_USERNAME
+  # HARBOR_PASSWORD
+
+.docker-build-template: &docker-build-template
+  stage: build
+  tags:
+    - kaniko  # 确保作业运行在名为 'kaniko' 的 GitLab Runner 节点上
+  image:
+    name: 192.168.40.248/library/kaniko-project/executor:v1.9.1-debug
+    entrypoint: ["/bin/sh", "-c"]
+  script:
+    # 配置 Docker 认证信息，用于访问私有仓库
+    - echo "{\"auths\":{\"192.168.40.248\":{\"username\":\"$HARBOR_USERNAME\",\"password\":\"$HARBOR_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    # 执行 Kaniko 构建并推送到私有仓库
+    - /kaniko/executor --context="${CI_PROJECT_DIR}" --dockerfile="${CI_PROJECT_DIR}/Dockerfile" --destination="${IMAGE_NAME}:${IMAGE_TAG}" --destination="${IMAGE_NAME}:latest" --cache=true --cache-ttl=24h
+  only:
+    - main
+    - master
+  retry: 2  # 构建失败时重试次数
+
+# 构建作业定义
+docker-build:
+  <<: *docker-build-template
