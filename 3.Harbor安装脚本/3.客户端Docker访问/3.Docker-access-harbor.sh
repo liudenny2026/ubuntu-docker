@@ -2,12 +2,12 @@
 
 echo "========================================"
 echo "客户端 Docker 访问 Harbor 配置脚本"
-echo "Harbor 地址: myregistry.denny.com"
+echo "Harbor 地址: harbor.my.com"
 echo "========================================"
 echo ""
 
 # 定义变量
-HARBOR_SERVER="myregistry.denny.com"
+HARBOR_SERVER="harbor.my.com"
 SERVER_CERT_DIR="/etc/docker/certs.d/${HARBOR_SERVER}"
 CLIENT_CERT_DIR="/etc/docker/certs.d/${HARBOR_SERVER}"
 
@@ -41,6 +41,10 @@ fi
 
 if [ $? -eq 0 ]; then
     echo "✓ CA 证书已复制到: ${CLIENT_CERT_DIR}/ca.crt"
+    
+    # 设置证书权限
+    sudo chmod 644 ${CLIENT_CERT_DIR}/ca.crt
+    echo "✓ 证书文件权限644已设置"
 else
     echo "✗ CA 证书复制失败"
     exit 1
@@ -51,6 +55,11 @@ echo ""
 echo "步骤 2/3: 验证 Docker 证书..."
 if [ -f "$CLIENT_CERT_DIR/ca.crt" ]; then
     echo "✓ CA 证书已配置成功: ${CLIENT_CERT_DIR}/ca.crt"
+    
+    # 确保 CA 证书路径正确
+    echo "验证 CA 证书权限和路径:"
+    ls -l ${CLIENT_CERT_DIR}/ca.crt
+    echo "# 应输出：-rw-r--r-- 1 root root 2065 Jan 12 06:07 ${CLIENT_CERT_DIR}/ca.crt"
 else
     echo "✗ CA 证书不存在: ${CLIENT_CERT_DIR}/ca.crt"
     exit 1
@@ -59,19 +68,13 @@ echo ""
 
 # 步骤3: 重启 Docker 服务
 echo "步骤 3/3: 重启 Docker 服务..."
-read -p "是否重启 Docker 服务? (y/n) [y]: " RESTART_DOCKER
-RESTART_DOCKER=${RESTART_DOCKER:-y}
-
-if [[ "$RESTART_DOCKER" == "y" || "$RESTART_DOCKER" == "Y" ]]; then
-    sudo systemctl restart docker
-    if [ $? -eq 0 ]; then
-        echo "✓ Docker 服务重启成功"
-    else
-        echo "✗ Docker 服务重启失败，请手动重启"
-        exit 1
-    fi
+echo "# 重启 Docker 服务"
+sudo systemctl restart docker
+if [ $? -eq 0 ]; then
+    echo "✓ Docker 服务重启成功"
 else
-    echo "跳过 Docker 服务重启，请手动执行: sudo systemctl restart docker"
+    echo "✗ Docker 服务重启失败，请手动重启"
+    exit 1
 fi
 echo ""
 

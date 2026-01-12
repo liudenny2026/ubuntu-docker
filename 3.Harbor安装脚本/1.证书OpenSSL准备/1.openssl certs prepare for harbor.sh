@@ -18,9 +18,10 @@ if [[ "$ID" != "ubuntu" ]]; then
     fi
 fi
 
+
 echo "========================================"
 echo "Harbor 证书自动部署脚本"
-echo "目标域名: myregistry.denny.com"
+echo "目标域名: harbor.my.com"
 echo "========================================"
 echo ""
 
@@ -33,7 +34,7 @@ if ! command -v openssl &> /dev/null; then
 fi
 
 # 定义域名
-DOMAIN="myregistry.denny.com"
+DOMAIN="harbor.my.com"
 
 # 检查是否已存在证书文件
 EXISTING_CA_FILES=""
@@ -146,6 +147,10 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1=${DOMAIN}
+DNS.2=harbor.my.com
+DNS.3=harbor
+IP.1=192.168.40.248
+
 EOF
 echo "✓ 扩展文件生成成功: v3.ext"
 echo ""
@@ -203,12 +208,47 @@ ${SUDO} mkdir -p /data/cert
 echo "✓ Harbor 证书目录创建完成: /data/cert"
 echo ""
 
+# 创建 Harbor SSL 目录
+echo "创建 Harbor SSL 目录..."
+${SUDO} mkdir -p /etc/harbor/ssl
+echo "✓ Harbor SSL 目录创建完成: /etc/harbor/ssl"
+echo ""
+
 # 复制证书到 Harbor 目录
 echo "步骤 2/4: 复制证书到 Harbor 目录..."
+# 检查目标文件是否存在，如果存在则先删除
+if [ -f "/data/cert/${DOMAIN}.crt" ]; then
+    ${SUDO} rm -f /data/cert/${DOMAIN}.crt
+fi
+if [ -f "/data/cert/${DOMAIN}.key" ]; then
+    ${SUDO} rm -f /data/cert/${DOMAIN}.key
+fi
+# 复制证书文件
 ${SUDO} cp ${DOMAIN}.crt /data/cert/
 ${SUDO} cp ${DOMAIN}.key /data/cert/
+# 设置 Harbor 证书目录中的文件权限
+${SUDO} chmod 644 /data/cert/${DOMAIN}.crt
+${SUDO} chmod 644 /data/cert/${DOMAIN}.key
 echo "✓ 证书已复制到 /data/cert/"
 echo ""
+
+# 复制证书到 Harbor SSL 目录
+echo "复制证书到 Harbor SSL 目录..."
+${SUDO} cp /data/cert/${DOMAIN}.crt /etc/harbor/ssl/harbor.crt
+${SUDO} cp /data/cert/${DOMAIN}.key /etc/harbor/ssl/harbor.key
+echo "✓ 证书已复制到 /etc/harbor/ssl/"
+echo ""
+
+# 设置 Harbor SSL 目录中的文件权限
+${SUDO} chmod 600 /etc/harbor/ssl/harbor.key
+${SUDO} chmod 644 /etc/harbor/ssl/harbor.crt
+echo "✓ Harbor SSL 证书文件权限已设置"
+echo ""
+
+# 验证证书信息
+echo "验证证书信息..."
+${SUDO} openssl x509 -in /etc/harbor/ssl/harbor.crt -text -noout | grep "Issuer"
+echo "✓ 证书验证完成"
 
 # 将 .crt 转换为 .cert 供 Docker 使用
 echo "步骤 3/4: 生成 Docker 证书格式..."
@@ -223,6 +263,13 @@ ${SUDO} cp ${DOMAIN}.cert /etc/docker/certs.d/${DOMAIN}/
 ${SUDO} cp ${DOMAIN}.key /etc/docker/certs.d/${DOMAIN}/
 ${SUDO} cp ca.crt /etc/docker/certs.d/${DOMAIN}/
 echo "✓ 证书已部署到 /etc/docker/certs.d/${DOMAIN}/"
+echo ""
+
+# 设置证书权限
+${SUDO} chmod 644 /etc/docker/certs.d/${DOMAIN}/ca.crt
+${SUDO} chmod 644 /etc/docker/certs.d/${DOMAIN}/${DOMAIN}.key
+${SUDO} chmod 644 /etc/docker/certs.d/${DOMAIN}/${DOMAIN}.cert
+echo "✓ 证书文件权限已设置"
 echo ""
 
 # 重启 Docker 服务
@@ -242,16 +289,19 @@ echo "========================================"
 echo "部署完成!"
 echo "========================================"
 echo "证书文件已部署到以下位置:"
+
 echo ""
 echo "Harbor 目录:"
 echo "  /data/cert/${DOMAIN}.crt"
 echo "  /data/cert/${DOMAIN}.key"
 echo ""
+
 echo "Docker 目录:"
 echo "  /etc/docker/certs.d/${DOMAIN}/${DOMAIN}.cert"
 echo "  /etc/docker/certs.d/${DOMAIN}/${DOMAIN}.key"
 echo "  /etc/docker/certs.d/${DOMAIN}/ca.crt"
 echo ""
+
 echo "========================================"
 echo "配置示例结构:"
 echo "/etc/docker/certs.d/"
