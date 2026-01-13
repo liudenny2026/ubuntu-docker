@@ -1,0 +1,86 @@
+# GitLab CI/CD Pipeline for Testing terraform-kubectl Docker Image
+# Purpose: Verify that Terraform and kubectl tools are working correctly in the custom Docker image
+
+stages:
+  - test
+
+variables:
+  TF_KCTL_TAG: "2026-1-12"
+  TF_KCTL_IMAGE: "192.168.40.248/library/terraform-kubectl:$TF_KCTL_TAG"
+  KUBE_SERVER: "https://192.168.40.241:6443"
+
+test:
+  stage: test
+  image: "$TF_KCTL_IMAGE"
+  script:
+    - echo "=== Checking Terraform version ==="
+    - terraform --version
+    - echo "=== Checking kubectl version ==="
+    - kubectl version --client=true
+    - echo "=== Verifying installation paths ==="
+    - which terraform
+    - which kubectl
+    - echo "=== Configuring Kubernetes connection ==="
+    - mkdir -p "$(dirname "$KUBECONFIG")"
+    - |
+      cat << EOF > "$KUBECONFIG"
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - cluster:
+          server: "${KUBE_SERVER}"
+          certificate-authority-data: "$KUBE_CA_PEM"
+        name: kubekey.kubernetes.cluster
+      users:
+      - name: kubernetes-admin
+        user:
+          client-certificate-data: "$KUBE_CLIENT_CERT_DATA"
+          client-key-data: "$KUBE_CLIENT_KEY_DATA"
+      contexts:
+      - context:
+          cluster: kubekey.kubernetes.cluster
+          user: kubernetes-admin
+        name: kubernetes-admin@kubekey.kubernetes.cluster
+      current-context: kubernetes-admin@kubekey.kubernetes.cluster
+      EOF
+    - echo "=== Testing kubectl connection to Kubernetes cluster ==="
+    - kubectl cluster-info
+    - kubectl get nodes
+    - echo "=== Creating temporary Terraform configuration ==="
+    - mkdir -p /tmp/tf-test
+    - cd /tmp/tf-test
+    - |
+      cat > main.tf << 'EOF'
+      terraform {
+        required_providers {
+          kubernetes = {
+            source  = "hashicorp/kubernetes"
+            version = "~> 2.32"
+          }
+        }
+      }
+
+      provider "kubernetes" {
+        config_path = "$KUBECONFIG"
+      }
+
+      resource "kubernetes_namespace" "test" {
+        metadata {
+          name = "terraform-test-namespace"
+        }
+      }
+
+      output "test_namespace_name" {
+        value = kubernetes_namespace.test.metadata[0].name
+      }
+      EOF
+    - echo "=== Initializing Terraform ==="
+    - terraform init -backend=false
+    - echo "=== Validating Terraform configuration ==="
+    - terraform validate
+    - echo "=== Testing Terraform connection to Kubernetes ==="
+    - terraform plan -out=tfplan -input=false
+    - echo "=== All tests passed successfully! ==="
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

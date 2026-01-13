@@ -1,0 +1,141 @@
+Running with gitlab-runner 18.7.1 (cc7f9277)
+  on kaniko LR3BsCw3i, system ID: s_2b5e0f2fedf7
+Preparing the "docker" executor
+00:03
+Using Docker executor with image 192.168.40.248/library/terraform-kubectl:2026-1-12 ...
+Using helper image:  192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1  (overridden, default would be  registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v18.7.1 )
+Using effective pull policy of [always] for container 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+Authenticating with credentials from /root/.docker/config.json
+Pulling docker image 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1 ...
+Using docker image sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e for 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1 with digest 192.168.40.248/library/gitlab-runner-helper@sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e ...
+Using helper image:  192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1  (overridden, default would be  registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v18.7.1 )
+Using effective pull policy of [always] for container 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+Using docker image sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e for 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1 with digest 192.168.40.248/library/gitlab-runner-helper@sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e ...
+Using effective pull policy of [always] for container 192.168.40.248/library/terraform-kubectl:2026-1-12
+Authenticating with credentials from /root/.docker/config.json
+Pulling docker image 192.168.40.248/library/terraform-kubectl:2026-1-12 ...
+Using docker image sha256:eb848c467ef0cf864dbb3ff32a2ba712f4b7768117aaac4b5483828f6705579d for 192.168.40.248/library/terraform-kubectl:2026-1-12 with digest 192.168.40.102/library/terraform-kubectl@sha256:eb848c467ef0cf864dbb3ff32a2ba712f4b7768117aaac4b5483828f6705579d ...
+Preparing environment
+00:01
+Using helper image:  192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1  (overridden, default would be  registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v18.7.1 )
+Using effective pull policy of [always] for container 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1
+Using docker image sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e for 192.168.40.248/library/gitlab-runner-helper:x86_64-v18.7.1 with digest 192.168.40.248/library/gitlab-runner-helper@sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e ...
+Using effective pull policy of [always] for container sha256:a7556d23a5f6fa2f5a5265d6ed83d1274aa78c1be4c191892eb122a20445777e
+Running on runner-lr3bscw3i-project-4-concurrent-0 via ubuntuclient...
+Getting source from Git repository
+00:02
+Gitaly correlation ID: 01KETQAHE7TCR7YF6JH8Z2751P
+Fetching changes with git depth set to 20...
+Reinitialized existing Git repository in /builds/root/terraform-nginx/.git/
+Created fresh repository.
+Checking out a1c6a7f4 as detached HEAD (ref is main)...
+Removing .terraform.d/
+Skipping Git submodules setup
+Executing "step_script" stage of the job script
+00:52
+Using effective pull policy of [always] for container 192.168.40.248/library/terraform-kubectl:2026-1-12
+Using docker image sha256:eb848c467ef0cf864dbb3ff32a2ba712f4b7768117aaac4b5483828f6705579d for 192.168.40.248/library/terraform-kubectl:2026-1-12 with digest 192.168.40.102/library/terraform-kubectl@sha256:eb848c467ef0cf864dbb3ff32a2ba712f4b7768117aaac4b5483828f6705579d ...
+$ echo "=== Checking Terraform version ==="
+=== Checking Terraform version ===
+$ terraform --version
+Terraform v1.14.3
+on linux_amd64
+$ echo "=== Checking kubectl version ==="
+=== Checking kubectl version ===
+$ kubectl version --client=true
+Client Version: v1.35.0
+Kustomize Version: v5.7.1
+$ echo "=== Verifying installation paths ==="
+=== Verifying installation paths ===
+$ which terraform
+/usr/local/bin/terraform
+$ which kubectl
+/usr/local/bin/kubectl
+$ echo "=== Configuring Kubernetes connection ==="
+=== Configuring Kubernetes connection ===
+$ mkdir -p "$(dirname "$KUBECONFIG")"
+$ cat << EOF > "$KUBECONFIG" # collapsed multi-line command
+$ echo "=== Testing kubectl connection to Kubernetes cluster ==="
+=== Testing kubectl connection to Kubernetes cluster ===
+$ kubectl cluster-info
+Kubernetes control plane is running at https://192.168.40.241:6443
+CoreDNS is running at https://192.168.40.241:6443/api/v1/namespaces/kube-system/services/coredns:dns/proxy
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+$ kubectl get nodes
+NAME     STATUS   ROLES           AGE   VERSION
+master   Ready    control-plane   11d   v1.33.3
+node1    Ready    worker          11d   v1.33.3
+node2    Ready    worker          11d   v1.33.3
+$ echo "=== Creating temporary Terraform configuration ==="
+=== Creating temporary Terraform configuration ===
+$ mkdir -p /tmp/tf-test
+$ cd /tmp/tf-test
+$ cat > main.tf << 'EOF' # collapsed multi-line command
+$ echo "=== Initializing Terraform ==="
+=== Initializing Terraform ===
+$ terraform init -backend=false
+Initializing provider plugins...
+- Finding hashicorp/kubernetes versions matching "~> 2.32"...
+- Installing hashicorp/kubernetes v2.38.0...
+- Installed hashicorp/kubernetes v2.38.0 (signed by HashiCorp)
+Terraform has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.
+Terraform has been successfully initialized!
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+$ echo "=== Validating Terraform configuration ==="
+=== Validating Terraform configuration ===
+$ terraform validate
+Success! The configuration is valid.
+$ echo "=== Testing Terraform connection to Kubernetes ==="
+=== Testing Terraform connection to Kubernetes ===
+$ terraform plan -out=tfplan -input=false
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+Terraform will perform the following actions:
+  # kubernetes_namespace.test will be created
+  + resource "kubernetes_namespace" "test" {
+      + id                               = (known after apply)
+      + wait_for_default_service_account = false
+      + metadata {
+          + generation       = (known after apply)
+          + name             = "terraform-test-namespace"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+Plan: 1 to add, 0 to change, 0 to destroy.
+Changes to Outputs:
+  + test_namespace_name = "terraform-test-namespace"
+Invalid attribute in provider configuration
+  with provider["registry.terraform.io/hashicorp/kubernetes"],
+  on main.tf line 10, in provider "kubernetes":
+  10: provider "kubernetes" {
+'config_path' refers to an invalid path: "$KUBECONFIG": stat $KUBECONFIG: no
+such file or directory
+Invalid attribute in provider configuration
+  with provider["registry.terraform.io/hashicorp/kubernetes"],
+  on main.tf line 10, in provider "kubernetes":
+  10: provider "kubernetes" {
+'client_certificate' is not a valid PEM encoded certificate
+Invalid attribute in provider configuration
+  with provider["registry.terraform.io/hashicorp/kubernetes"],
+  on main.tf line 10, in provider "kubernetes":
+  10: provider "kubernetes" {
+'client_key' is not a valid PEM encoded private key
+─────────────────────────────────────────────────────────────────────────────
+Saved the plan to: tfplan
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan"
+$ echo "=== All tests passed successfully! ==="
+=== All tests passed successfully! ===
+Cleaning up project directory and file based variables
+00:01
+Job succeeded
