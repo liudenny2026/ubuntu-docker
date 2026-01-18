@@ -1,5 +1,4 @@
 
-
 # 1. 添加清华大学镜像源
 sudo apt update
 sudo apt install -y curl openssh-server ca-certificates tzdata perl
