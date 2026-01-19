@@ -42,10 +42,11 @@ sudo timedatectl set-timezone Asia/Shanghai
 
 #配置主机名解析
 echo "配置主机名解析..."
-sudo sed -i '$a 192.168.40.241 master' /etc/hosts
-sudo sed -i '$a 192.168.40.242 node1' /etc/hosts
-sudo sed -i '$a 192.168.40.243 node2' /etc/hosts
-sudo sed -i '$a 192.168.40.249 server' /etc/hosts
+# 获取当前节点IP
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+# 设置主机名为master
+sudo hostnamectl set-hostname master
+sudo sed -i '$a '$LOCAL_IP' master' /etc/hosts
 
 #开启root登录
 echo "开启root登录..."
@@ -55,23 +56,17 @@ sudo systemctl restart ssh
 
 #验证解析
 echo "验证主机名解析..."
-ping master -c 3
-ping node1 -c 3
-ping node2 -c 3
-ping server -c 3
-
-
+grep "$LOCAL_IP master" /etc/hosts > /dev/null
+if [ $? -eq 0 ]; then
+    echo "主机名解析配置正确"
+else
+    echo "警告：主机名解析配置可能有问题"
+fi
 
 echo "系统环境准备完成，开始K8s集群部署..."
 
-# 检查主机名是否等于master
-if [ "$(hostname)" != "master" ]; then
-    echo "错误：当前主机名 '$(hostname)' 不是Master节点"
-    echo "此脚本只能在主master节点上执行"
-    exit 1
-fi
-
-echo "当前主机名: $(hostname)，验证通过，继续执行..."
+# 跳过主机名检查，允许在任何节点上执行
+echo "当前主机名: $(hostname)，继续执行..."
 
 
 # 创建目录并进入
@@ -97,39 +92,36 @@ chmod +x kk
 
 # 创建config.yaml配置文件
 echo "创建config.yaml配置文件..."
-cat > config.yaml << 'EOF'
+cat > config.yaml << EOF
 apiVersion: kubekey.kubesphere.io/v1alpha2
 kind: Cluster
 metadata:
   name: local.kubernetes.cluster
 spec:
-  hosts:  		 
-  - {name: master, address: 192.168.40.241,  user: root, password: "2028"}
-  - {name: node1, address: 192.168.40.242,  user: root, password: "2028"}
-  - {name: node2, address: 192.168.40.243,  user: root, password: "2028"}
+  hosts: 		 
+  - {name: master, address: $LOCAL_IP,  user: root, password: "2028"}
   roleGroups:							 
     etcd:
     - master
     control-plane: 
     - master
     worker:
-    - node1
-    - node2
+    - master
   controlPlaneEndpoint:
-    domain: local.kubernetes.cluster
-    address: ""
+    domain: stage.kubesphere
+    address: $LOCAL_IP
     port: 6443
   kubernetes:
     version: v1.33.3
-    clusterName: kubekey.kubernetes.cluster
+    clusterName: kubekey.stage
     autoRenewCerts: true
     containerManager: docker
   etcd:
     type: kubekey
   network:
     plugin: calico
-    kubePodsCIDR: 10.89.0.0/16		 
-    kubeServiceCIDR: 10.64.0.0/16			
+    kubePodsCIDR: 10.88.0.0/16		 
+    kubeServiceCIDR: 10.6.0.0/16			
     multusCNI:
       enabled: false
   registry:
@@ -145,6 +137,6 @@ echo "config.yaml配置文件已创建"
 # 再次设置环境变量并创建集群
 echo "开始创建K8s集群..."
 export KKZONE=cn
-./kk create cluster -f config.yaml -y
+./kk create cluster -f config.yaml -y --with-kubernetes v1.33.3 --with-kubesphere v3.4.1
 
 echo "K8s集群部署完成！"
