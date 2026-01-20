@@ -13,7 +13,7 @@ curl -fsSL https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey | sudo gpg --dear
 
 # 4. 安装指定版本
 sudo apt update
-sudo apt install -y gitlab-ce=18.7.0-ce.0
+sudo apt install -y gitlab-ce=18.8.0-ce.0
 
 # 5. 配置并启动
 sudo gitlab-ctl reconfigure
