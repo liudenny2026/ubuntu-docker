@@ -7,10 +7,11 @@ spec:
   addresses:
   - 192.168.40.150-192.168.40.179
 
+---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
-  name: example
+  name: dev
   namespace: metallb-system
 spec:
   ipAddressPools:
